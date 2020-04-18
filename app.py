@@ -72,7 +72,7 @@ def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_
 
     for disk_id in api.storage.disks_ids:
         disk_name = str(api.storage.disk_name(disk_id))
-        disk_name_info.labels(disk_id).info({"disk_name": disk_name})
+        disk_name_info.labels(disk_id, disk_name).info({"disk_name": disk_name})
 
         smart_status = str(api.storage.disk_smart_status(disk_id))
         s_status_enum.labels(disk_id, disk_name).state(smart_status)
