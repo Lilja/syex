@@ -17,16 +17,18 @@ def metric(_name):
     return "{}_{}".format(prometheus_prefix, _name)
 
 
-def static_metrics(api):
+def set_static_info(api):
     model = str(api.information.model)
     amount_of_ram = str(api.information.ram)
     serial_number = str(api.information.serial)
     dsm_version = str(api.information.version_string)
 
-    Info(metric("model"), "Synology Model").info({"model": model})
-    Info(metric("amount_of_ram"), "Amount of ram").info({"amount_of_ram": amount_of_ram})
-    Info(metric("serial_number"), "Serial number").info({"serial_number": serial_number})
-    Info(metric("dsm_version"), "DSM version").info({"dsm_version": dsm_version})
+    Info(metric("model_metadata"), "Model metadata").info({
+        "model": model,
+        "amount_of_ram": amount_of_ram,
+        "serial_number": serial_number,
+        "dsm_version": dsm_version
+    })
 
 
 def general_info(api, temp_gauge, uptime_gauge, cpu_gauge):
@@ -73,13 +75,13 @@ def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_
         disk_name_info.labels(disk_id).info({"disk_name": disk_name})
 
         smart_status = str(api.storage.disk_smart_status(disk_id))
-        s_status_enum.labels(disk_id).state(smart_status)
+        s_status_enum.labels(disk_id, disk_name).state(smart_status)
 
         status = str(api.storage.disk_status(disk_id))
-        status_enum.labels(disk_id).state(status)
+        status_enum.labels(disk_id, disk_name).state(status)
 
         disk_temp = api.storage.disk_temp(disk_id)
-        disk_temp_gauge.labels(disk_id).set(disk_temp)
+        disk_temp_gauge.labels(disk_id, disk_name).set(disk_temp)
 
 
 if __name__ == '__main__':
@@ -91,7 +93,7 @@ if __name__ == '__main__':
 
     api = SynologyDSM(url, port, usr, password)
     start_http_server(9999)
-    static_metrics(api)
+    set_static_info(api)
 
     temp_gauge = Gauge(metric("temperature"), "Temperature")
     uptime_gauge = Gauge(metric("uptime"), "Uptime")
@@ -108,9 +110,9 @@ if __name__ == '__main__':
     volume_size_used_gauge = Gauge(metric("volume_size_used"), "Used size of volume", ["Volume_ID"])
 
     s_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID"], states=["normal"])
-    status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID"], states=["normal"])
-    disk_name_info = Info(metric("disk_status"), "Name of disk", ["Disk_ID"])
-    disk_temp_gauge = Gauge(metric("disk_temp"), "Temperature of disk", ["Disk_ID"])
+    status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID","Disk_name"], states=["normal"])
+    disk_name_info = Info(metric("disk_status"), "Name of disk", ["Disk_ID", "Disk_name"])
+    disk_temp_gauge = Gauge(metric("disk_temp"), "Temperature of disk", ["Disk_ID", "Disk_name"])
 
     while True:
         api.update(with_information=True)
