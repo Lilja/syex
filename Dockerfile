@@ -13,4 +13,4 @@ RUN pip --no-cache-dir install poetry poetry-setup \
     && poetry install \
     && rm -rf ~/.config/pypoetry
 
-CMD ["poetry", "run", "python", "/app.py"]
+CMD ["poetry", "run", "python", "/app/app.py"]

@@ -10,7 +10,7 @@ def require_environmental_variable(variable_name):
     if variable_name not in os.env.keys():
         print('Variable {} missing.'.format(variable_name))
         exit(1)
-    return os.env[variable_name]
+    return os.environ[variable_name]
 
 
 def metric(_name):
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     port = require_environmental_variable('SYNOLOGY_PORT')
     usr = require_environmental_variable('SYNOLOGY_USER')
     password = require_environmental_variable('SYNOLOGY_PASSWORD')
-    frequency = os.env.get('FREQUENCY', 15)
+    frequency = os.environ.get('FREQUENCY', 15)
 
     api = SynologyDSM(url, port, usr, password)
     start_http_server(9999)
