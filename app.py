@@ -87,7 +87,7 @@ if __name__ == '__main__':
     port = require_environmental_variable('SYNOLOGY_PORT')
     usr = require_environmental_variable('SYNOLOGY_USER')
     password = require_environmental_variable('SYNOLOGY_PASSWORD')
-    frequency = os.environ.get('FREQUENCY', 15)
+    frequency = int(os.environ.get('FREQUENCY', 15))
 
     api = SynologyDSM(url, port, usr, password)
     start_http_server(9999)
