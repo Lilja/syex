@@ -1,0 +1,24 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Login to docker hub
+      run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login --username lilja --password-stdin;
+    - name: Build the Docker image
+      run: |
+        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+        docker build . --file Dockerfile -t lilja/syex:latest -t lilja/syex:$VERSION;
+    - name: Push image to docker hub
+      run: docker push lilja/blog
