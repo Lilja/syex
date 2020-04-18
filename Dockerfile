@@ -11,7 +11,6 @@ WORKDIR /app
 RUN apk add --no-cache libressl-dev musl-dev libffi-dev gcc
 RUN pip --no-cache-dir install poetry poetry-setup \
     && poetry install \
-    && pip uninstall poetry -y \
     && rm -rf ~/.config/pypoetry
 
 CMD ["poetry", "run", "python", "/app.py"]
