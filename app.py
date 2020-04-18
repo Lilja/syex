@@ -7,7 +7,7 @@ prometheus_prefix = "syno"
 
 
 def require_environmental_variable(variable_name):
-    if variable_name not in os.env.keys():
+    if variable_name not in os.environ.keys():
         print('Variable {} missing.'.format(variable_name))
         exit(1)
     return os.environ[variable_name]
