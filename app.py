@@ -109,7 +109,7 @@ if __name__ == '__main__':
     volume_size_gauge = Gauge(metric("volume_size"), "Size of volume", ["Volume_ID"])
     volume_size_used_gauge = Gauge(metric("volume_size_used"), "Used size of volume", ["Volume_ID"])
 
-    s_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID"], states=["normal"])
+    s_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID", "Disk_name"], states=["normal"])
     status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID","Disk_name"], states=["normal"])
     disk_name_info = Info(metric("disk_status"), "Name of disk", ["Disk_ID", "Disk_name"])
     disk_temp_gauge = Gauge(metric("disk_temp"), "Temperature of disk", ["Disk_ID", "Disk_name"])
