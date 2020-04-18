@@ -6,8 +6,8 @@ LABEL maintainer="Erik <erikvlilja+syex@gmail.com>"
 COPY poetry.lock pyproject.toml ./
 
 # install poetry, dependencies, then remove poetry
+RUN apk add --no-cache libressl-dev musl-dev libffi-dev gcc
 RUN pip --no-cache-dir install poetry poetry-setup \
-    && poetry config settings.virtualenvs.create false \
     && poetry install \
     && pip uninstall poetry -y \
     && rm -rf ~/.config/pypoetry
