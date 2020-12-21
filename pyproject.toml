@@ -6,9 +6,9 @@ authors = ["Erik Lilja <erikvlilja@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-python-synology = "^0.6.0"
+python = "^3.7"
 prometheus_client = "^0.7.1"
+synologydsm-api = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 

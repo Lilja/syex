@@ -18,4 +18,5 @@ RUN pip --no-cache-dir install poetry poetry-setup \
 
 COPY . /app
 
+RUN poetry run pip list
 CMD ["poetry", "run", "python", "/app/app.py"]
