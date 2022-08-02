@@ -45,7 +45,7 @@ def general_info(api, temp_gauge, uptime_gauge, cpu_gauge):
 
 
 def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_down_gauge,
-    volume_status_enum, volume_size_gauge, volume_size_used_gauge,
+    volume_status_enum, volume_size_gauge, volume_size_used_gauge, share_size_used_gauge,
     s_status_enum, status_enum, disk_name_info, disk_temp_gauge
 ):
     memory_use_percentage = int(api.utilisation.memory_real_usage)
@@ -84,6 +84,10 @@ def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_
         disk_temp = api.storage.disk_temp(disk_id)
         disk_temp_gauge.labels(disk_id, disk_name).set(disk_temp)
 
+    for share_id in api.share.shares_uuids:
+        share_name = str(api.share.share_name(share_id))
+        share_size_used = str(api.share.share_size(share_id, human_readable=False))
+        share_size_used_gauge.labels(share_id, share_name).set(share_size_used)
 
 if __name__ == '__main__':
     url = require_environmental_variable('SYNOLOGY_URL')
@@ -113,6 +117,8 @@ if __name__ == '__main__':
     volume_size_gauge = Gauge(metric("volume_size"), "Size of volume", ["Volume_ID"])
     volume_size_used_gauge = Gauge(metric("volume_size_used"), "Used size of volume", ["Volume_ID"])
 
+    share_size_used_gauge = Gauge(metric("share_size_used"), "Used size of share", ["Share_ID", "Share_Name"])
+
     s_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID", "Disk_name"], states=["normal"])
     status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID","Disk_name"], states=["normal"])
     disk_name_info = Info(metric("disk_status"), "Name of disk", ["Disk_ID", "Disk_name"])
@@ -133,7 +139,7 @@ if __name__ == '__main__':
         general_info(api, temp_gauge, uptime_gauge, cpu_gauge)
         stats(
             api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_down_gauge,
-            volume_status_enum, volume_size_gauge, volume_size_used_gauge,
+            volume_status_enum, volume_size_gauge, volume_size_used_gauge, share_size_used_gauge,
             s_status_enum, status_enum, disk_name_info, disk_temp_gauge
         )
         sleep(frequency)
