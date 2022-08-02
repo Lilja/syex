@@ -18,8 +18,9 @@ jobs:
         with:
           username: lilja
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: Build the Docker image
+      - name: Checkout code
         uses: actions/checkout@v2
+      - name: Build the Docker image
         run: |
           ls -al
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
