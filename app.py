@@ -1,5 +1,5 @@
 import os
-from synology_dsm import SynologyDSM
+from synology_dsm import SynologyDSM, exceptions
 from prometheus_client import start_http_server, Gauge, Info, Enum
 from time import sleep
 
@@ -119,11 +119,17 @@ if __name__ == '__main__':
     disk_temp_gauge = Gauge(metric("disk_temp"), "Temperature of disk", ["Disk_ID", "Disk_name"])
 
     while True:
-        api.utilisation.update()
-        api.information.update()
-        api.storage.update()
-        api.share.update()
-        # api.update(with_information=True)
+        try:
+            api.utilisation.update()
+            api.information.update()
+            api.storage.update()
+            api.share.update()
+
+        except exceptions.SynologyDSMRequestException as e:
+            print( "The Module couldn't reach the Synology API:" )
+            print(e)
+            exit(1)
+
         general_info(api, temp_gauge, uptime_gauge, cpu_gauge)
         stats(
             api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_down_gauge,
