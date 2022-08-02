@@ -1,5 +1,5 @@
 import os
-from synology_dsm import SynologyDSM
+from synology_dsm import SynologyDSM, exceptions
 from prometheus_client import start_http_server, Gauge, Info, Enum
 from time import sleep
 
@@ -45,7 +45,7 @@ def general_info(api, temp_gauge, uptime_gauge, cpu_gauge):
 
 
 def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_down_gauge,
-    volume_status_enum, volume_size_gauge, volume_size_used_gauge,
+    volume_status_enum, volume_size_gauge, volume_size_used_gauge, share_size_used_gauge,
     s_status_enum, status_enum, disk_name_info, disk_temp_gauge
 ):
     memory_use_percentage = int(api.utilisation.memory_real_usage)
@@ -84,15 +84,22 @@ def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_
         disk_temp = api.storage.disk_temp(disk_id)
         disk_temp_gauge.labels(disk_id, disk_name).set(disk_temp)
 
+    for share_id in api.share.shares_uuids:
+        share_name = str(api.share.share_name(share_id))
+        share_size_used = str(api.share.share_size(share_id, human_readable=False))
+        share_size_used_gauge.labels(share_id, share_name).set(share_size_used)
 
 if __name__ == '__main__':
     url = require_environmental_variable('SYNOLOGY_URL')
     port = require_environmental_variable('SYNOLOGY_PORT')
     usr = require_environmental_variable('SYNOLOGY_USER')
     password = require_environmental_variable('SYNOLOGY_PASSWORD')
-    frequency = int(os.environ.get('FREQUENCY', 15))
+    https = os.getenv('SYNOLOGY_HTTPS', 'false').lower() in ('true', '1')
+    verify = os.getenv('SYNOLOGY_VERIFY_SSL', 'false').lower() in ('true', '1')
+    frequency = int(os.getenv('FREQUENCY', 15))
 
-    api = SynologyDSM(url, port, usr, password, timeout=60)
+    api = SynologyDSM(url, port, usr, password, use_https=https, verify_ssl=verify, timeout=60)
+
     start_http_server(9999)
     set_static_info(api)
 
@@ -110,21 +117,29 @@ if __name__ == '__main__':
     volume_size_gauge = Gauge(metric("volume_size"), "Size of volume", ["Volume_ID"])
     volume_size_used_gauge = Gauge(metric("volume_size_used"), "Used size of volume", ["Volume_ID"])
 
+    share_size_used_gauge = Gauge(metric("share_size_used"), "Used size of share", ["Share_ID", "Share_Name"])
+
     s_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID", "Disk_name"], states=["normal"])
     status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID","Disk_name"], states=["normal"])
     disk_name_info = Info(metric("disk_status"), "Name of disk", ["Disk_ID", "Disk_name"])
     disk_temp_gauge = Gauge(metric("disk_temp"), "Temperature of disk", ["Disk_ID", "Disk_name"])
 
     while True:
-        api.utilisation.update()
-        api.information.update()
-        api.storage.update()
-        api.share.update()
-        # api.update(with_information=True)
+        try:
+            api.utilisation.update()
+            api.information.update()
+            api.storage.update()
+            api.share.update()
+
+        except exceptions.SynologyDSMRequestException as e:
+            print( "The Module couldn't reach the Synology API:" )
+            print(e)
+            exit(1)
+
         general_info(api, temp_gauge, uptime_gauge, cpu_gauge)
         stats(
             api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_down_gauge,
-            volume_status_enum, volume_size_gauge, volume_size_used_gauge,
+            volume_status_enum, volume_size_gauge, volume_size_used_gauge, share_size_used_gauge,
             s_status_enum, status_enum, disk_name_info, disk_temp_gauge
         )
         sleep(frequency)
