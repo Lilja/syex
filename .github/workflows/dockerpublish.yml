@@ -20,6 +20,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Build the Docker image
         run: |
+          ls -al
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           docker build . --file Dockerfile -t lilja/syex:latest -t lilja/syex:$VERSION;
       - name: Push image to docker hub
