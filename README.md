@@ -17,6 +17,8 @@ services:
       - SYNOLOGY_PORT=5000
       - SYNOLOGY_USER=USER_NAME
       - SYNOLOGY_PASSWORD=PASSWORD
+      - SYNOLOGY_HTTPS="true"
+      - SYNOLOGY_VERIFY_SSL="true"
       - FREQUENCY=1
 ```
 

@@ -90,9 +90,12 @@ if __name__ == '__main__':
     port = require_environmental_variable('SYNOLOGY_PORT')
     usr = require_environmental_variable('SYNOLOGY_USER')
     password = require_environmental_variable('SYNOLOGY_PASSWORD')
-    frequency = int(os.environ.get('FREQUENCY', 15))
+    https = os.getenv('SYNOLOGY_HTTPS', 'false').lower() in ('true', '1')
+    verify = os.getenv('SYNOLOGY_VERIFY_SSL', 'false').lower() in ('true', '1')
+    frequency = int(os.getenv('FREQUENCY', 15))
 
-    api = SynologyDSM(url, port, usr, password, timeout=60)
+    api = SynologyDSM(url, port, usr, password, use_https=https, verify_ssl=verify, timeout=60)
+
     start_http_server(9999)
     set_static_info(api)
 
