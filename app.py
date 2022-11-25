@@ -63,6 +63,9 @@ def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_
 
     for volume_id in api.storage.volumes_ids:
         volume_status = str(api.storage.volume_status(volume_id))
+        if volume_status not in volume_states:
+            volume_status = "error"
+
         volume_status_enum.labels(volume_id).state(volume_status)
 
         volume_size_used = str(api.storage.volume_size_used(volume_id, human_readable=False))
@@ -76,18 +79,28 @@ def stats(api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_
         disk_name_info.labels(disk_id, disk_name).info({"disk_name": disk_name})
 
         smart_status = str(api.storage.disk_smart_status(disk_id))
-        s_status_enum.labels(disk_id, disk_name).state(smart_status)
+        if smart_status not in smart_states:
+            smart_status = "error"
 
-        status = str(api.storage.disk_status(disk_id))
-        status_enum.labels(disk_id, disk_name).state(status)
+        smart_status_enum.labels(disk_id, disk_name).state(smart_status)
+
+        disk_status = str(api.storage.disk_status(disk_id))
+        if disk_status not in disk_states:
+            disk_status = "error"
+
+        disk_status_enum.labels(disk_id, disk_name).state(disk_status)
 
         disk_temp = api.storage.disk_temp(disk_id)
         disk_temp_gauge.labels(disk_id, disk_name).set(disk_temp)
 
     for share_id in api.share.shares_uuids:
-        share_name = str(api.share.share_name(share_id))
-        share_size_used = str(api.share.share_size(share_id, human_readable=False))
-        share_size_used_gauge.labels(share_id, share_name).set(share_size_used)
+        try:
+            share_name = str(api.share.share_name(share_id))
+            share_size_used = str(api.share.share_size(share_id, human_readable=False))
+            share_size_used_gauge.labels(share_id, share_name).set(share_size_used)
+        # no metrics available, which could be the case with unsupported external devices
+        except TypeError:
+            continue
 
 if __name__ == '__main__':
     url = require_environmental_variable('SYNOLOGY_URL')
@@ -103,6 +116,10 @@ if __name__ == '__main__':
     start_http_server(9999)
     set_static_info(api)
 
+    volume_states = ["normal","attention","error"]
+    smart_states = ["normal","error"]
+    disk_states = ["normal","error"]
+
     temp_gauge = Gauge(metric("temperature"), "Temperature")
     uptime_gauge = Gauge(metric("uptime"), "Uptime")
     cpu_gauge = Gauge(metric("cpu_load"), "DSM version")
@@ -113,14 +130,14 @@ if __name__ == '__main__':
     network_up_gauge = Gauge(metric("network_up"), "Network up")
     network_down_gauge = Gauge(metric("network_down"), "Network down")
 
-    volume_status_enum = Enum(metric("volume_status"), "Status of volume", labelnames=["Volume_ID"], states=["normal"])
+    volume_status_enum = Enum(metric("volume_status"), "Status of volume", labelnames=["Volume_ID"], states=volume_states)
     volume_size_gauge = Gauge(metric("volume_size"), "Size of volume", ["Volume_ID"])
     volume_size_used_gauge = Gauge(metric("volume_size_used"), "Used size of volume", ["Volume_ID"])
 
     share_size_used_gauge = Gauge(metric("share_size_used"), "Used size of share", ["Share_ID", "Share_Name"])
 
-    s_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID", "Disk_name"], states=["normal"])
-    status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID","Disk_name"], states=["normal"])
+    smart_status_enum = Enum(metric("disk_smart_status"), "Smart status about disk", labelnames=["Disk_ID", "Disk_name"], states=smart_states)
+    disk_status_enum = Enum(metric("disk_status"), "Status about disk", labelnames=["Disk_ID","Disk_name"], states=disk_states)
     disk_name_info = Info(metric("disk_status"), "Name of disk", ["Disk_ID", "Disk_name"])
     disk_temp_gauge = Gauge(metric("disk_temp"), "Temperature of disk", ["Disk_ID", "Disk_name"])
 
@@ -140,6 +157,6 @@ if __name__ == '__main__':
         stats(
             api, memory_used_gauge, memory_total_gauge, network_up_gauge, network_down_gauge,
             volume_status_enum, volume_size_gauge, volume_size_used_gauge, share_size_used_gauge,
-            s_status_enum, status_enum, disk_name_info, disk_temp_gauge
+            smart_status_enum, disk_status_enum, disk_name_info, disk_temp_gauge
         )
         sleep(frequency)
